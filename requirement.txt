@@ -1,0 +1,10 @@
+The following libraries are required:
+- requests
+- bs4
+- PyQt5
+- pyqt-fluent-widgets
+- lxml
+- prettytable
+- pyperclip
+
+Python version: 3.11.7
