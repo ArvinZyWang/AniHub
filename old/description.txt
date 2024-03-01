@@ -1,0 +1,18 @@
+Here is the very first version of the Repo,
+which is also the first repo of the author,
+after learning Python for about 5 months.
+
+I hardly knew how to orgnize my codes,
+how to setup my environment,
+and how to orgnize data-structure,
+(I used ONLY dictionaries to store data and pass arguments).
+It was terribly written,
+and impossible for further development.
+
+But it was a great lesson,
+that every beginner needs,
+and a new beginning.
+I just enjoy the feeling of creating something,
+instead of having or claiming.
+
+Thank you for reading. :)
