@@ -1,4 +1,5 @@
 ### **AniHub Release Notes**
+![Alt text](res/ScreenShot.png?raw=true "AniHub")
 ### 前言
 欢迎使用 AniHub！AniHub 是一款专为动漫爱好者设计的动漫订阅管理软件，以更好地管理[动漫花园dmhy.org](https://dmhy.org)上更新的番剧。通过 AniHub，你可以轻松更新您的订阅、添加新订阅、搜索动漫以及标记已观看的动漫。AniHub 采用优雅的 [PyQt Fluent Widgets](https://github.com/zhiyiYo/PyQt-Fluent-Widgets)构建，提供了流畅直观的用户界面，确保顺畅愉快的用户体验。
 
