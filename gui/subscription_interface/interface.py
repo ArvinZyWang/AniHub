@@ -221,6 +221,8 @@ class SubscriptionInterface(QWidget):
         print('Update completed.')
         self.onItemClicked(self.currentIndex)
         posterDownloadThread = PosterDownloaderMultithread(self.subscription)
+        if self.stateTooltip:
+            self.stateTooltip.setContent("正在更新海报~")
         posterDownloadThread.start()
         loop = QEventLoop()
         posterDownloadThread.finished.connect(self.onPosterLoaded)
@@ -228,6 +230,7 @@ class SubscriptionInterface(QWidget):
         
     def onPosterLoaded(self):
         print('Poster Downloaded.')
+        self.stateTooltip.setContent("更新完成ヾ(*´▽'*)ﾉ")
         self.stateTooltip.setState(True)
         self.stateTooltip = None
         self.update()
