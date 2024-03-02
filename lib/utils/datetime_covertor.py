@@ -14,8 +14,11 @@ def str2datetimeObj(timeString:str|datetime|None) -> datetime:
         return timeString
     else:
         try:
-            datetimeObj = datetime.strptime(timeString, "%a, %d %b %Y %H:%M:%S %z")
-        except:
             datetimeObj = datetime.fromisoformat(timeString)
+        except ValueError:
+            try:
+                datetimeObj = datetime.strptime(timeString, "%a, %d %b %Y %H:%M:%S %z")
+            except ValueError:
+                datetimeObj = datetime.strptime(timeString, '%a, %d %b %Y %H:%M:%S GMT')
         return datetimeObj
     

@@ -9,6 +9,7 @@ sys.path.append(lib_path)
 
 from typing import Literal
 import requests
+from urllib.parse import quote
 
 from PyQt5.QtCore import pyqtSignal, QThread
 from PyQt5.QtWidgets import QApplication
@@ -63,14 +64,27 @@ class Search(QThread):
         
         # 获取页面
         try:
-            response = requests.get(url = url, headers= headers, timeout=15)
+            response = requests.get(url = url, headers= headers, timeout=2)
             if response.status_code == 200:
                 print(f'Succeeded in searching for {keyword}.')
             else:
-                print(f"Failed to search {keyword}. HTTP Status Code: {response.status_code}")
+                print(f"Failed to search fetch {keyword} from dmhy.org. HTTP Status Code: {response.status_code}, please consider using proxy.")
                 return None
-        except requests.exceptions.ConnectTimeout:
-            print(f'Timeout, please consider using proxy.')
+        except (requests.exceptions.ConnectTimeout, requests.exceptions.ReadTimeout):
+            # 如果未开启代理，就尝试从dmhy.org的第三方镜像站获取
+            print(f"Trying to fetch {keyword} from mirror site.")
+            match sort:
+                case 'all':
+                    sort = ''
+                case 'episode':
+                    sort = '動畫'
+                case 'season':
+                    sort = '季度全集'
+            sort_encoded = quote(sort)
+            keyword_encoded = quote(keyword)
+            del headers['Host']
+            url = f'https://garden.onekuma.cn/feed.xml?filter=%5B%7B%22fansubId%22:%5B%22{team_id}%22%5D,%22type%22:%22{sort_encoded}%22,%22include%22:%5B%22{keyword_encoded}%22%5D,%22keywords%22:%5B%22%22%5D%7D%5D'
+            response = requests.get(url = url, headers= headers, timeout=5)
         except Exception as e:
             print(f'Failed to search {keyword}. Error:{e}')
             return None

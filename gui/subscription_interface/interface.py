@@ -209,7 +209,7 @@ class SubscriptionInterface(QWidget):
     def startUpdate(self):
         updateThread = UpdateMultiThread(self.subscription)
         print('Start to update.')
-        self.stateTooltip = StateToolTip('Update', '正在拉取更新，请不要忘记挂上代理哦~', self.gallery)
+        self.stateTooltip = StateToolTip('Update', '正在拉取更新，建议挂上代理哦~', self.gallery)
         self.stateTooltip.show()
         updateThread.start()
         loop = QEventLoop()
