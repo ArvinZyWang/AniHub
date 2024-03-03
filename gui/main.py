@@ -38,9 +38,13 @@ class CustomTitleBar(TitleBar):
         self.titleLabel = QLabel(self)
         self.hBoxLayout.insertWidget(2, self.titleLabel, 0, Qt.AlignLeft | Qt.AlignBottom)
         self.titleLabel.setObjectName('titleLabel')
+        
         self.window().windowTitleChanged.connect(self.setTitle)
 
     def setTitle(self, title):
+        defaut_style_L = '<div style="color: black;font-size:20px; font-family: Times New Roman">'
+        defaut_style_R = '</div>'
+        title = defaut_style_L + 'AniHub <i style="font-size: 14px;"> for Dmhy.org</i>' + defaut_style_R
         self.titleLabel.setText(title)
         self.titleLabel.adjustSize()
 
@@ -111,9 +115,7 @@ class Window(FramelessWindow):
     def initWindow(self):
         self.resize(900, 700)
         self.setWindowIcon(QIcon('res/logo.png'))
-        defaut_style_L = '<div style="color: black;font-size:20px; font-family: Times New Roman">'
-        defaut_style_R = '</div>'
-        self.setWindowTitle(defaut_style_L + 'AniHub <i style="font-size: 14px;"> for Dmhy.org</i>' + defaut_style_R)
+        self.setWindowTitle('AniHub')
         self.titleBar.setAttribute(Qt.WA_StyledBackground)
 
         desktop = QApplication.desktop().availableGeometry()

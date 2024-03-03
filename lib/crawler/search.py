@@ -9,6 +9,7 @@ sys.path.append(lib_path)
 
 from typing import Literal
 import requests
+import json
 from urllib.parse import quote
 
 from PyQt5.QtCore import pyqtSignal, QThread
@@ -18,6 +19,19 @@ from bs4 import BeautifulSoup
 from models.anime import Anime
 from models.team import teams
 from utils.cache import cache
+from utils.ping import pingUrls
+
+servers = [
+    'https://www.dmhy.org/',
+    'https://dmhy.waaa.moe',
+    'https://garden.onekuma.cn'
+]
+# SERVER, lantency = pingUrls(servers)[0]
+# TODO: FIX SERVER 1 AND 2
+SERVER = 'https://www.dmhy.org/'
+print(f'Current server: {SERVER}')
+
+
 
 class Search(QThread):
     """用以搜索的线程
@@ -35,8 +49,7 @@ class Search(QThread):
     def run(self):
         if not self.args is None:
             result = self.__get_result(*self.args)
-            if result:
-                self.finished.emit(result)
+            self.finished.emit(result)
         else:
             raise Exception('Search called, but no args were given.')
     
@@ -46,49 +59,21 @@ class Search(QThread):
                      sort:Literal['all','episode','season'] = 'all',
                      team = 'all') -> list[Anime]:
         # 分类：sort_id=0 -> 全部   sort_id=2 -> 动画   sort_id=31 -> 季度全集
-        # 通过关键字组织url
-        team_id = teams[team]
-        match sort:
-            case 'all':
-                sort_id = 0
-            case 'episode':
-                sort_id = 2
-            case 'season':
-                sort_id = 31
-        print(f'Searching for {keyword}.')
-              
-        url =f'https://www.dmhy.org/topics/rss/rss.xml?keyword={keyword}&sort_id={sort_id}&team_id={team_id}'
-        headers = {}
-        headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        headers['Host'] = 'www.dmhy.org'
-        
-        # 获取页面
+
         try:
-            response = requests.get(url = url, headers= headers, timeout=2)
+            server = SERVER
+            response = Search.__get_response(server, keyword, sort, team)
             if response.status_code == 200:
-                print(f'Succeeded in searching for {keyword}.')
+                print(f'Succeeded in searching for {keyword} from {server}.')
             else:
-                print(f"Failed to search fetch {keyword} from dmhy.org. HTTP Status Code: {response.status_code}, please consider using proxy.")
-                return None
+                print(f"Failed to search {keyword} from {server}. HTTP Status Code: {response.status_code}.")
         except (requests.exceptions.ConnectTimeout, requests.exceptions.ReadTimeout):
-            # 如果未开启代理，就尝试从dmhy.org的第三方镜像站获取
-            print(f"Trying to fetch {keyword} from mirror site.")
-            match sort:
-                case 'all':
-                    sort = ''
-                case 'episode':
-                    sort = '動畫'
-                case 'season':
-                    sort = '季度全集'
-            sort_encoded = quote(sort)
-            keyword_encoded = quote(keyword)
-            del headers['Host']
-            url = f'https://garden.onekuma.cn/feed.xml?filter=%5B%7B%22fansubId%22:%5B%22{team_id}%22%5D,%22type%22:%22{sort_encoded}%22,%22include%22:%5B%22{keyword_encoded}%22%5D,%22keywords%22:%5B%22%22%5D%7D%5D'
-            response = requests.get(url = url, headers= headers, timeout=5)
+                print(f"Time out: Failed to search {keyword} from {server}")
+                return None
         except Exception as e:
-            print(f'Failed to search {keyword}. Error:{e}')
+            print(f'Failed to search {keyword} from {server}. Error:{e}')
             return None
-        
+ 
         # 利用bs与lxml解析页面，整理为字典，并创建Anime对象
         bs = BeautifulSoup(response.text, features='xml')
         
@@ -106,9 +91,71 @@ class Search(QThread):
             except:
                 item['imgUrls'] = []
             result.append(Anime(temp_dict))
-            
         return result
-
+    
+    @staticmethod
+    def __get_response(server:str,
+                    keyword:str,
+                    sort:Literal['all','episode','season'] = 'all',
+                    team = 'all') -> requests.Response:
+        headers = {}
+        match server:
+            
+            
+            case 'https://www.dmhy.org/':
+                team_id = teams[team]
+                match sort:
+                    case 'all':
+                        sort_id = 0
+                    case 'episode':
+                        sort_id = 2
+                    case 'season':
+                        sort_id = 31
+                        
+                headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                headers['Host'] = 'www.dmhy.org'
+                
+                url =f'https://www.dmhy.org/topics/rss/rss.xml?keyword={keyword}&sort_id={sort_id}&team_id={team_id}'
+                response = requests.get(url = url, headers= headers, timeout=5)
+                return response
+            
+            
+            case 'https://dmhy.waaa.moe':
+                team_id = teams[team]
+                match sort:
+                    case 'all':
+                        sort_id = 0
+                    case 'episode':
+                        sort_id = 2
+                    case 'season':
+                        sort_id = 31
+                        
+                headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                
+                url =f'https://dmhy.waaa.moe/topics/rss/rss.xml?keyword={keyword}&sort_id={sort_id}&team_id={team_id}'
+                response = requests.get(url = url, headers= headers, timeout=5)
+                return response
+            
+            case 'https://garden.onekuma.cn':
+                team_id = teams[team]
+                match sort:
+                    case 'all':
+                        sort = ''
+                    case 'episode':
+                        sort = '動畫'
+                    case 'season':
+                        sort = '季度全集'
+                headers['Host'] = 'garden.onekuma.cn'
+                filter_param = json.dumps([{
+                    "fansubId": [team_id],
+                    "type": [sort],
+                    "include": [keyword]
+                    }])
+                url =f'https://garden.onekuma.cn/feed.xml?filter={filter_param}'
+                response = requests.get(url = url, headers= headers, timeout=5)
+                return response
+                
+                
     
 if __name__ == '__main__':
     import sys

@@ -1,7 +1,6 @@
 import sys
 import os
 
-from PyQt5.QtGui import QResizeEvent
 file_path = os.path.abspath( os.path.dirname(__file__) )
 gui_path = os.path.dirname(file_path)
 root_path = os.path.dirname(gui_path)
@@ -38,15 +37,21 @@ class SearchInterface(QWidget):
         self.Table.initUi()
         
         self.show()
-        
+    
+    def setEnabled(self, a0: bool) -> None:
+        return super().setEnabled(a0)
+    
     def __searchThread(self, args:list[str]):
         # Set Search Thread
+        self.setEnabled(False)
         self.search_thread = Search(*args)
         self.search_thread.finished.connect(lambda data: self.Table.setData(data))
         self.search_thread.finished.connect(self.Table.update)
+        self.search_thread.finished.connect(lambda data:print(data))
+        self.search_thread.finished.connect(lambda data: self.setEnabled(True))
         self.search_thread.start()
         
-    def resizeEvent(self, a0: QResizeEvent | None) -> None:
+    def resizeEvent(self, a0) -> None:
         super().resizeEvent(a0)
         print(f'Current Size: width = {self.width()}, height = {self.height()}')
         
