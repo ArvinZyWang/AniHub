@@ -17,19 +17,10 @@ from PyQt5.QtWidgets import QApplication
 from bs4 import BeautifulSoup
 
 from models.anime import Anime
+from models.server import Server
 from models.team import teams
-from utils.cache import cache
-from utils.ping import pingUrls
 
-servers = [
-    'https://www.dmhy.org/',
-    'https://dmhy.waaa.moe',
-    'https://garden.onekuma.cn'
-]
-# SERVER, lantency = pingUrls(servers)[0]
-# TODO: FIX SERVER 1 AND 2
-SERVER = 'https://www.dmhy.org/'
-print(f'Current server: {SERVER}')
+from utils.cache import cache
 
 
 
@@ -38,6 +29,7 @@ class Search(QThread):
     搜索结果用funished信号传出
     """
     finished = pyqtSignal(list)
+    server = Server.MAIN
     args = None
     
     def __init__(self, keyword:str,
@@ -48,20 +40,20 @@ class Search(QThread):
     
     def run(self):
         if not self.args is None:
-            result = self.__get_result(*self.args)
+            result = self.__get_result(self.server, *self.args)
             self.finished.emit(result)
         else:
             raise Exception('Search called, but no args were given.')
     
     @staticmethod
     @cache(enable= True, timeout = 60)
-    def __get_result(keyword:str,
+    def __get_result(server:Server,
+                     keyword:str,
                      sort:Literal['all','episode','season'] = 'all',
                      team = 'all') -> list[Anime]:
         # 分类：sort_id=0 -> 全部   sort_id=2 -> 动画   sort_id=31 -> 季度全集
 
         try:
-            server = SERVER
             response = Search.__get_response(server, keyword, sort, team)
             if response.status_code == 200:
                 print(f'Succeeded in searching for {keyword} from {server}.')
@@ -102,7 +94,7 @@ class Search(QThread):
         match server:
             
             
-            case 'https://www.dmhy.org/':
+            case Server.MAIN:
                 team_id = teams[team]
                 match sort:
                     case 'all':
@@ -120,7 +112,7 @@ class Search(QThread):
                 return response
             
             
-            case 'https://dmhy.waaa.moe':
+            case Server.WAAA:
                 team_id = teams[team]
                 match sort:
                     case 'all':
@@ -134,9 +126,10 @@ class Search(QThread):
                 
                 url =f'https://dmhy.waaa.moe/topics/rss/rss.xml?keyword={keyword}&sort_id={sort_id}&team_id={team_id}'
                 response = requests.get(url = url, headers= headers, timeout=5)
+                print(response.text)
                 return response
             
-            case 'https://garden.onekuma.cn':
+            case Server.ONEKUMA:
                 team_id = teams[team]
                 match sort:
                     case 'all':
@@ -169,6 +162,7 @@ if __name__ == '__main__':
     @timer
     def search(keyword:str):
         qthread = Search(keyword, team = "LoliHouse")
+        qthread.server = Server.MAIN
         qthread.start()
         loop = QEventLoop()
         qthread.finished.connect(lambda result: print_result(result[:10]))
@@ -176,6 +170,6 @@ if __name__ == '__main__':
         loop.exec_()
         
     app = QApplication(sys.argv)
-    breakpoint()
+    #breakpoint()
     search("It's mygo")
     app.exec_()
