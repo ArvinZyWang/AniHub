@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 def datetimeObj2str(datetimeObj:datetime|None) -> str:
     if isinstance(datetimeObj, datetime):
@@ -19,6 +19,8 @@ def str2datetimeObj(timeString:str|datetime|None) -> datetime:
             try:
                 datetimeObj = datetime.strptime(timeString, "%a, %d %b %Y %H:%M:%S %z")
             except ValueError:
+                utc_plus_8 = timezone(timedelta(hours=8))
                 datetimeObj = datetime.strptime(timeString, '%a, %d %b %Y %H:%M:%S GMT')
+                datetimeObj = datetimeObj.replace(tzinfo=utc_plus_8)
         return datetimeObj
     

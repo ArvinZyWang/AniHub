@@ -18,6 +18,7 @@ from qframelesswindow import FramelessWindow, TitleBar
 
 from search_interface.interface import SearchInterface
 from subscription_interface.interface import SubscriptionInterface
+from settings_interface.interface import SettingsInterface
 
 
 
@@ -61,7 +62,7 @@ class Window(FramelessWindow):
         
         self.hBoxLayout = QHBoxLayout(self)
         self.navigationInterface = NavigationInterface(
-            self, showMenuButton=True, showReturnButton=True)
+            self, showMenuButton=True, showReturnButton=False)
         self.stackWidget = QStackedWidget(self)
 
         # create sub interface
@@ -69,6 +70,8 @@ class Window(FramelessWindow):
         self.searchInterface.setObjectName('SearchInterface')
         self.subscriptionInterface = SubscriptionInterface(self)
         self.subscriptionInterface.setObjectName('SubscriptionInterface')
+        self.settingsInterface = SettingsInterface(self)
+        self.settingsInterface.setObjectName('SettingsInterface')
 
         # initialize layout
         self.initLayout()
@@ -98,16 +101,16 @@ class Window(FramelessWindow):
         self.addSubInterface(self.searchInterface, FIF.SEARCH, 'Search')
         self.addSubInterface(self.subscriptionInterface, FIF.MEDIA, 'Subscription')
 
-        # self.navigationInterface.addSeparator()
+        #self.navigationInterface.addSeparator()
 
         # add custom widget to bottom
-        # self.addSubInterface(self.settingInterface, FIF.SETTING, 'Settings', NavigationItemPosition.BOTTOM)
+        self.addSubInterface(self.settingsInterface, FIF.SETTING, 'Settings', NavigationItemPosition.BOTTOM)
         
         #!IMPORTANT: don't forget to set the default route key
-        qrouter.setDefaultRouteKey(self.stackWidget, self.searchInterface.objectName())
+        qrouter.setDefaultRouteKey(self.stackWidget, self.subscriptionInterface.objectName())
 
         # set the maximum width
-        # self.navigationInterface.setExpandWidth(300)
+        self.navigationInterface.setExpandWidth(200)
 
         self.stackWidget.currentChanged.connect(self.onCurrentInterfaceChanged)
         self.stackWidget.setCurrentIndex(1)

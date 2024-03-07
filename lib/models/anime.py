@@ -5,7 +5,7 @@ file_path = os.path.abspath( os.path.dirname(__file__) )
 lib_path = os.path.dirname(file_path)
 sys.path.append(lib_path)
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 from utils.datetime_covertor import datetime, datetimeObj2str, str2datetimeObj
 
@@ -19,31 +19,16 @@ class Anime:
     
     pubDate: datetime = None
     
-    imgUrls: list[str] = None
+    imgUrls: list[str] = field(default_factory=list)
     
-    def __init__(self, anime_info:dict | None = None):
-        if not anime_info is None:
-            self.setInfo(anime_info)
-    
-    def setInfo(self, anime_info:dict):
-        """get an instance of Anime according to the given dict.\n
-        dict example:\n
-            {
-                'title': '__Title__',
-                'magnet': '__Magnet__',
-                'pubDate': '__Publishing Date__',
-                'imgUrls': ['url1', 'url2', 'url3'...]
-            }
-        """
-        self.title = anime_info.get('title', None)
-        self.magnet = anime_info.get('magnet', None)
-        
-        self.watched = anime_info.get('watched', False)
-        
-        self.pubDate = str2datetimeObj(anime_info.get('pubDate',None))
-
-        self.imgUrls = anime_info.get('imgUrls', [])
-        
+    @classmethod
+    def new(cls, info:dict):
+        self =cls.__new__(cls)
+        self.__init__()
+        for key in info:
+            if hasattr(self, key):
+                setattr(self, key, info[key])
+        self.pubDate = str2datetimeObj(self.pubDate)
         return self
     
     def to_dict(self):

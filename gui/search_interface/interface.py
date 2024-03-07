@@ -47,7 +47,6 @@ class SearchInterface(QWidget):
         self.search_thread = Search(*args)
         self.search_thread.finished.connect(lambda data: self.Table.setData(data))
         self.search_thread.finished.connect(self.Table.update)
-        self.search_thread.finished.connect(lambda data:print(data))
         self.search_thread.finished.connect(lambda data: self.setEnabled(True))
         self.search_thread.start()
         

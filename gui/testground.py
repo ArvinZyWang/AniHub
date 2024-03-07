@@ -17,6 +17,7 @@ from gui.subscription_interface.anime_gallery import AnimeGallery
 from gui.subscription_interface.anime_gallery_scroll import AnimeGalleryScroll
 from gui.subscription_interface.interface import SubscriptionInterface
 from gui.subscription_interface.anime_episodes_table import AnimeEpisodesTable
+from gui.settings_interface.interface import SettingsInterface
 
 class TestWindow(QWidget):
     
@@ -67,12 +68,18 @@ class TestWindow(QWidget):
             self.testWidget = self.testWidget(self)
             self.testWidget.setData(example_list)
             self.testWidget.resize(700, 300)
+        
+        if self.testWidget is SettingsInterface:
+            self.testWidget = self.testWidget(None)
+            self.testWidget.resize(700, 300)
+            self.testWidget.show()
             
+
             
             
 QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
 QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 app = QApplication(sys.argv)
-window = TestWindow(SubscriptionInterface)
+window = TestWindow(SettingsInterface)
 app.exec_()

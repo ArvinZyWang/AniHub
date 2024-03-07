@@ -8,7 +8,7 @@ root_path = os.path.dirname(lib_path)
 sys.path.append(file_path)
 sys.path.append(lib_path)
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 from models.anime import Anime
 
@@ -21,26 +21,28 @@ class SubscribedAnime:
     
     NewCount: int = 0
     
-    imgUrls: list[str] = None
+    imgUrls: list[str] = field(default_factory=list)
     poster: str = None
-    
-    def __init__(self, parent, subscription_info:dict) -> None:
+        
+    @classmethod
+    def new(cls, parent, info:dict):
+        self =cls.__new__(cls)
+        self.__init__()
+        for key in info:
+            if hasattr(self, key):
+                setattr(self, key, info[key])
         self.parent = parent
         
-        self.title = subscription_info.get('title', None)
-        self.team = subscription_info.get('team', None)
+        self.episodes = [Anime.new(item) for item in self.episodes]
+        self.NewCount = len([item for item in self.episodes if not item.watched])
         
-        self.episodes = sorted([Anime(item) for item in subscription_info.get('episodes', [])])
         self.lastWatchedEpisode = None
         for episode in self.episodes[::-1]:
             if episode.watched:
                 self.lastWatchedEpisode = episode
                 break
-
-        self.NewCount = len([item for item in self.episodes if not item.watched])
-        
-        self.imgUrls = subscription_info.get('imgUrls', [])
-        self.poster = subscription_info.get('poster', None)
+            
+        return self
         
     def to_dict(self):
         data = asdict(self)

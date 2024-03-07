@@ -44,6 +44,7 @@ class AnimeGalleryScroll(SmoothScrollArea):
         
         self.resizeEvent(None)
             
+        self.setWidgetResizable(True)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
         self.setFrameStyle(QFrame.NoFrame)
         self.setScrollAnimation(Qt.Vertical, 400, QEasingCurve.OutQuint)

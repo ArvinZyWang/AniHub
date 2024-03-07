@@ -4,8 +4,8 @@ from utils.ping import pingUrls
 class Server(Enum):
     
     MAIN = 'https://www.dmhy.org/'
-    WAAA = 'https://dmhy.waaa.moe/'
     ONEKUMA = 'https://garden.onekuma.cn/'
+    WAAA = 'https://dmhy.waaa.moe/'
     
     @classmethod
     def ping(cls):

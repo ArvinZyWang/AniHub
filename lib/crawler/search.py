@@ -9,7 +9,6 @@ sys.path.append(lib_path)
 
 from typing import Literal
 import requests
-import json
 from urllib.parse import quote
 
 from PyQt5.QtCore import pyqtSignal, QThread
@@ -18,6 +17,7 @@ from bs4 import BeautifulSoup
 
 from models.anime import Anime
 from models.server import Server
+from models.settings import Settings
 from models.team import teams
 
 from utils.cache import cache
@@ -29,7 +29,6 @@ class Search(QThread):
     搜索结果用funished信号传出
     """
     finished = pyqtSignal(list)
-    server = Server.MAIN
     args = None
     
     def __init__(self, keyword:str,
@@ -40,14 +39,16 @@ class Search(QThread):
     
     def run(self):
         if not self.args is None:
-            result = self.__get_result(self.server, *self.args)
+            setting = Settings()
+            result = self.__get_result(setting.server, *self.args)
             self.finished.emit(result)
+            del setting
         else:
             raise Exception('Search called, but no args were given.')
     
     @staticmethod
     @cache(enable= True, timeout = 60)
-    def __get_result(server:Server,
+    def __get_result(server:str,
                      keyword:str,
                      sort:Literal['all','episode','season'] = 'all',
                      team = 'all') -> list[Anime]:
@@ -63,7 +64,7 @@ class Search(QThread):
                 print(f"Time out: Failed to search {keyword} from {server}")
                 return None
         except Exception as e:
-            print(f'Failed to search {keyword} from {server}. Error:{e}')
+            print(f'Failed to search {keyword} from {server}. Error: {e}')
             return None
  
         # 利用bs与lxml解析页面，整理为字典，并创建Anime对象
@@ -82,7 +83,7 @@ class Search(QThread):
                 temp_dict['imgUrls'] = [img['src'] for img in imgs]
             except:
                 item['imgUrls'] = []
-            result.append(Anime(temp_dict))
+            result.append(Anime.new(temp_dict))
         return result
     
     @staticmethod
@@ -91,10 +92,12 @@ class Search(QThread):
                     sort:Literal['all','episode','season'] = 'all',
                     team = 'all') -> requests.Response:
         headers = {}
+        headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        
         match server:
             
             
-            case Server.MAIN:
+            case Server.MAIN.value:
                 team_id = teams[team]
                 match sort:
                     case 'all':
@@ -104,15 +107,13 @@ class Search(QThread):
                     case 'season':
                         sort_id = 31
                         
-                headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                 headers['Host'] = 'www.dmhy.org'
                 
                 url =f'https://www.dmhy.org/topics/rss/rss.xml?keyword={keyword}&sort_id={sort_id}&team_id={team_id}'
                 response = requests.get(url = url, headers= headers, timeout=5)
                 return response
             
-            
-            case Server.WAAA:
+            case Server.WAAA.value:
                 team_id = teams[team]
                 match sort:
                     case 'all':
@@ -122,29 +123,39 @@ class Search(QThread):
                     case 'season':
                         sort_id = 31
                         
-                headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                
                 url =f'https://dmhy.waaa.moe/topics/rss/rss.xml?keyword={keyword}&sort_id={sort_id}&team_id={team_id}'
                 response = requests.get(url = url, headers= headers, timeout=5)
-                print(response.text)
                 return response
             
-            case Server.ONEKUMA:
+            case Server.ONEKUMA.value:
+                filter = {'search': keyword, 'fansubId':None, 'type':None}
+                
+                filter['search'] = keyword
+                
                 team_id = teams[team]
+                if team_id != 0:
+                    filter["fansubId"] = team_id
+                    
                 match sort:
                     case 'all':
-                        sort = ''
+                        pass
                     case 'episode':
-                        sort = '動畫'
+                        filter["type"] = '動畫'
                     case 'season':
-                        sort = '季度全集'
+                        filter["type"] = '季度全集'
+
+                if filter['fansubId'] and filter['type']:
+                    url = f'https://garden.onekuma.cn/feed.xml?filter=%5B%7B%22fansubId%22:%5B%22{filter["fansubId"]}%22%5D,%22type%22:%22{quote(filter["type"])}%22,%22search%22:%5B%22{quote(filter["search"])}%22%5D%7D%5D'
+                elif filter['fansubId']:
+                    url = f'https://garden.onekuma.cn/feed.xml?filter=%5B%7B%22fansubId%22:%5B%22{filter["fansubId"]}%22%5D,%22search%22:%5B%22{quote(filter["search"])}%22%5D%7D%5D'
+                elif filter['type']:
+                    url = f'https://garden.onekuma.cn/feed.xml?filter=%5B%7B%22type%22:%22{quote(filter["type"])}%22,%22search%22:%5B%22{quote(filter["search"])}%22%5D%7D%5D'
+                else:
+                    url = f'https://garden.onekuma.cn/feed.xml?filter=%5B%7B%22search%22:%5B%22{quote(filter["search"])}%22%5D%7D%5D'
+
                 headers['Host'] = 'garden.onekuma.cn'
-                filter_param = json.dumps([{
-                    "fansubId": [team_id],
-                    "type": [sort],
-                    "include": [keyword]
-                    }])
-                url =f'https://garden.onekuma.cn/feed.xml?filter={filter_param}'
+                headers['Sec-Ch-Ua-Platform'] = "Windows"
+                headers['Sec-Fetch-Dest'] = 'document'
                 response = requests.get(url = url, headers= headers, timeout=5)
                 return response
                 
@@ -162,7 +173,6 @@ if __name__ == '__main__':
     @timer
     def search(keyword:str):
         qthread = Search(keyword, team = "LoliHouse")
-        qthread.server = Server.MAIN
         qthread.start()
         loop = QEventLoop()
         qthread.finished.connect(lambda result: print_result(result[:10]))

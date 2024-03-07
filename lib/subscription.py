@@ -12,7 +12,7 @@ class Subscription:
     def load(self):
         try:
             with open(r'./data/subscribed.json', 'r', encoding='utf-8') as f:
-                self.data = [SubscribedAnime(self, item) for item in json.load(f)]
+                self.data = [SubscribedAnime.new(self, item) for item in json.load(f)]
                 self.data.sort(key = lambda anime: anime.NewCount, reverse = True)
                 self.save(copy = True)
                 if not self.data:
